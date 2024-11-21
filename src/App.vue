@@ -1,7 +1,9 @@
 <!-- App.vue -->
 <script setup lang="ts">
-import { ref, onMounted } from "vue";
+import { ref, onMounted, watch } from "vue";
+import { v4 as uuid } from "uuid";
 import HelloWorld from "./components/TodoList.vue";
+import spin from "./components/utils/spin";
 
 // Types
 interface Todo {
@@ -16,11 +18,27 @@ const error = ref<string | null>(null);
 const isLoading = ref(false);
 const isAdding = ref(false);
 const scrollOnAdd = ref("top");
-// const disabledItems = ref<string[]>([]);
+let showList = ref(false);
 
 // Mounting
 onMounted(() => {
   loadTodos();
+});
+
+//För animation
+watch(showList, (newValue) => {
+  const hideInput = document.getElementById("input-hide-while-spin");
+  const listContainer = document.getElementById("todo-list-container");
+
+  if (newValue) {
+    if (hideInput) hideInput.style.display = "none";
+    if (listContainer) {
+      spin(listContainer, { duration: 2000, spin: 2 });
+      setTimeout(() => {
+        if (hideInput) hideInput.style.display = "block";
+      }, 2400);
+    }
+  }
 });
 
 // Load todos
@@ -43,13 +61,14 @@ async function loadTodos() {
 }
 
 // Add todo
-async function handleAddTodo(title: string) {
+async function handleAddTodo(event: string) {
+  console.log(event);
   isAdding.value = true;
   try {
     const response = await fetch("https://jsonplaceholder.typicode.com/todos", {
       method: "POST",
       body: JSON.stringify({
-        title,
+        title: event,
         completed: false,
       }),
       headers: {
@@ -59,7 +78,7 @@ async function handleAddTodo(title: string) {
 
     if (response.ok) {
       const todo = await response.json();
-      todos.value = [{ ...todo, id: crypto.randomUUID() }, ...todos.value];
+      todos.value = [{ ...todo, id: uuid() }, ...todos.value];
       console.log(todo);
     } else {
       alert("An error has occurred.");
@@ -73,9 +92,7 @@ async function handleAddTodo(title: string) {
 
 // Remove todo
 async function handleRemoveTodo(id: number) {
-  const originalTodos = [...todos.value]; // Spara originalet
-
-  // Optimistisk uppdatering
+  const originalTodos = [...todos.value];
   todos.value = todos.value.filter((t) => t.id !== id);
 
   try {
@@ -94,7 +111,7 @@ async function handleRemoveTodo(id: number) {
   } catch (err) {
     console.error("Network error while deleting todo:", err);
     alert("Network error. Restoring the todo.");
-    todos.value = originalTodos; // Återställ vid fel
+    todos.value = originalTodos;
   }
 }
 
@@ -135,36 +152,43 @@ async function handleToggleTodo(payload: { id: number; value: boolean }) {
 
 <template>
   <div>
-    <a href="https://vitejs.dev" target="_blank">
-      <img src="/vite.svg" class="logo" alt="Vite logo" />
-    </a>
-    <a href="https://vuejs.org/" target="_blank">
-      <img src="./assets/vue.svg" class="logo vue" alt="Vue logo" />
-    </a>
+    <img src="/vue.svg" class="logo vue" alt="Vue logo" />
   </div>
-  <HelloWorld
-    :todos="todos"
-    :error="error"
-    :is-loading="isLoading"
-    :disable-adding="isAdding"
-    :scroll-on-add="scrollOnAdd"
-    @addtodo="handleAddTodo"
-    @removetodo="handleRemoveTodo"
-    @toggletodo="handleToggleTodo"
-  />
+  <label id="input-hide-while-spin">
+    <input type="checkbox" v-model="showList" />
+
+    {{ showList ? "Uncheck to hide todos" : "Show todos" }}
+  </label>
+  <div
+    id="todo-list-container"
+    class="logo"
+    v-show="showList"
+    :style="{
+      transition: 'transform 1s ease-in-out',
+    }"
+  >
+    <HelloWorld
+      :todos="todos"
+      :error="error"
+      :is-loading="isLoading"
+      :disable-adding="isAdding"
+      :scroll-on-add="scrollOnAdd"
+      @addtodo="handleAddTodo"
+      @removetodo="handleRemoveTodo"
+      @toggletodo="handleToggleTodo"
+    />
+  </div>
 </template>
 
 <style scoped>
 .logo {
   height: 6em;
   padding: 1.5em;
+}
+
+#todo-list-container:hover {
   will-change: filter;
-  transition: filter 300ms;
-}
-.logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
-}
-.logo.vue:hover {
+  transition: filter 400ms;
   filter: drop-shadow(0 0 2em #42b883aa);
 }
 </style>
