@@ -5,7 +5,7 @@ import HelloWorld from "./components/TodoList.vue";
 
 // Types
 interface Todo {
-  id: string;
+  id: number;
   title: string;
   completed: boolean;
 }
@@ -72,10 +72,12 @@ async function handleAddTodo(title: string) {
 }
 
 // Remove todo
-async function handleRemoveTodo(id: string) {
-  // if (disabledItems.value.includes(id)) return;
+async function handleRemoveTodo(id: number) {
+  const originalTodos = [...todos.value]; // Spara originalet
 
-  // disabledItems.value.push(id);
+  // Optimistisk uppdatering
+  todos.value = todos.value.filter((t) => t.id !== id);
+
   try {
     const response = await fetch(
       `https://jsonplaceholder.typicode.com/todos/${id}`,
@@ -84,17 +86,16 @@ async function handleRemoveTodo(id: string) {
       }
     );
 
-    if (response.ok) {
-      todos.value = todos.value.filter((t) => t.id !== id);
-    } else {
-      alert("An error has occurred.");
+    if (!response.ok) {
+      throw new Error("Failed to delete the todo.");
     }
+
+    console.log("Todo deleted:", id);
   } catch (err) {
-    alert("Network error");
+    console.error("Network error while deleting todo:", err);
+    alert("Network error. Restoring the todo.");
+    todos.value = originalTodos; // Återställ vid fel
   }
-  // finally {
-  //   disabledItems.value = disabledItems.value.filter((itemId) => itemId !== id);
-  // }
 }
 
 // Toggle todo

@@ -67,7 +67,11 @@ function handleToggleTodo(id: Number, value: Boolean) {
                 />
                 <div name="title">{{ todo.title }}</div>
               </label>
-              <button class="remove-todo-button" aria-label="test">
+              <button
+                class="remove-todo-button"
+                aria-label="test"
+                @click="$emit('removetodo', todo.id)"
+              >
                 <span style:width="10px" style:color="red"> Delete </span>
               </button>
             </div>
@@ -130,10 +134,11 @@ function handleToggleTodo(id: Number, value: Boolean) {
   .completed {
     opacity: 0.5;
     text-decoration: line-through;
+    color: black;
   }
   .remove-todo-button {
     border: none;
-    background: rgb(230, 127, 127);
+    background: rgb(241, 75, 75);
     color: black;
     padding: 5px;
     position: absolute;
